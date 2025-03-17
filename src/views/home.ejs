@@ -29,25 +29,20 @@
             alert("WebSocket Error! Check console.");
         };
 
-        ws.onmessage = (event) => {
-            console.log("📩 Message received:", event.data);
-            alert("Message received: " + event.data);
+ws.onmessage = function(event) {
+        const chatBox = document.getElementById("chat-box");
+        const msg = document.createElement("p");
+        msg.textContent = event.data; // Pesan langsung ditampilkan
+        chatBox.appendChild(msg);
+    };
 
-            const chatBox = document.getElementById("chat-box");
-            const msg = document.createElement("p");
-            msg.textContent = event.data;
-            chatBox.appendChild(msg);
-        };
-
-        function sendMessage() {
-            const input = document.getElementById("chat-input");
-            if (input.value.trim() !== "") {
-                console.log("📤 Sending message:", input.value);
-                ws.send(input.value);
-                alert("Message Sent: " + input.value);
-                input.value = "";
-            }
+    function sendMessage() {
+        const input = document.getElementById("chat-input");
+        if (input.value.trim() !== "") {
+            ws.send(JSON.stringify({ username: "<%= username %>", message: input.value }));
+            input.value = "";
         }
+    }
     </script>
 </body>
 </html>

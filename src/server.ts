@@ -16,14 +16,22 @@ const server = serve({
             console.log("✅ Client connected!");
             clients.add(ws);
         },
-        message(ws, message) {
-            console.log("📩 Received message:", message);
-            for (const client of clients) {
-                if (client.readyState === WebSocket.OPEN) {
-                    client.send(message);
-                }
+      message(ws, message) {
+    console.log("📩 Received message:", message);
+    
+    try {
+        const data = JSON.parse(message);
+        const formattedMessage = `${data.username}: ${data.message}`;
+
+        for (const client of clients) {
+            if (client.readyState === WebSocket.OPEN) {
+                client.send(formattedMessage);
             }
-        },
+        }
+    } catch (error) {
+        console.error("❌ Error parsing message:", error);
+    }
+},
         close(ws) {
             console.log("🔌 Client disconnected!");
             clients.delete(ws);
