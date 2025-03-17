@@ -29,20 +29,23 @@
             alert("WebSocket Error! Check console.");
         };
 
-ws.onmessage = function(event) {
-        const chatBox = document.getElementById("chat-box");
-        const msg = document.createElement("p");
-        msg.textContent = event.data; // Pesan langsung ditampilkan
-        chatBox.appendChild(msg);
-    };
+        ws.onmessage = function(event) {
+            const chatBox = document.getElementById("chat-box");
+            const msg = document.createElement("p");
+            msg.textContent = event.data;
+            chatBox.appendChild(msg);
 
-    function sendMessage() {
-        const input = document.getElementById("chat-input");
-        if (input.value.trim() !== "") {
-            ws.send(JSON.stringify({ username: "<%= username %>", message: input.value }));
-            input.value = "";
+            // Auto-scroll ke bawah
+            chatBox.scrollTop = chatBox.scrollHeight;
+        };
+
+        function sendMessage() {
+            const input = document.getElementById("chat-input");
+            if (input.value.trim() !== "") {
+                ws.send(JSON.stringify({ message: input.value }));
+                input.value = "";
+            }
         }
-    }
     </script>
 </body>
 </html>

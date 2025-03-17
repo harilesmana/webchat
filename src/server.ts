@@ -1,58 +1,11 @@
 import { Elysia } from "elysia";
-import authRoutes from "./routes/auth";
 import { renderView } from "./utils/render";
 import { serve } from "bun";
 
 const app = new Elysia();
 const clients = new Set<WebSocket>();
 
-// ➜ Server HTTP & WebSocket dalam satu `serve({})`
-const server = serve({
-    port: 3000,
-
-    // 🔌 Konfigurasi WebSocket dengan `websocket` object
-    websocket: {
-        open(ws) {
-            console.log("✅ Client connected!");
-            clients.add(ws);
-        },
-      message(ws, message) {
-    console.log("📩 Received message:", message);
-    
-    try {
-        const data = JSON.parse(message);
-        const formattedMessage = `${data.username}: ${data.message}`;
-
-        for (const client of clients) {
-            if (client.readyState === WebSocket.OPEN) {
-                client.send(formattedMessage);
-            }
-        }
-    } catch (error) {
-        console.error("❌ Error parsing message:", error);
-    }
-},
-        close(ws) {
-            console.log("🔌 Client disconnected!");
-            clients.delete(ws);
-        },
-    },
-
-    fetch(req, server) {
-        const url = new URL(req.url);
-
-        // 🔄 Upgrade WebSocket pada endpoint `/ws`
-        if (url.pathname === "/ws") {
-            console.log("🔌 Incoming WebSocket connection...");
-            const success = server.upgrade(req);
-            return success ? undefined : new Response("WebSocket Upgrade Failed", { status: 400 });
-        }
-
-        return app.handle(req);
-    },
-});
-
-// ➜ Middleware untuk membaca cookie session
+// ➜ Middleware: Menyimpan user session dari cookie
 app.use(async ({ request, next }) => {
     const cookies = request.headers.get("cookie");
     const session = cookies?.split("; ").find((c) => c.startsWith("session="));
@@ -60,8 +13,8 @@ app.use(async ({ request, next }) => {
     return next();
 });
 
-// ➜ Redirect dari "/" ke halaman login atau home
-app.get("/", async ({ request }) => {
+// ➜ Routing halaman utama
+app.get("/", ({ request }) => {
     return new Response(null, {
         status: 302,
         headers: { Location: request.user ? "/home" : "/login" },
@@ -93,7 +46,7 @@ app.get("/home", async ({ request }) => {
 });
 
 // ➜ Logout (hapus session)
-app.get("/logout", async () => {
+app.get("/logout", () => {
     return new Response(null, {
         status: 302,
         headers: {
@@ -103,7 +56,53 @@ app.get("/logout", async () => {
     });
 });
 
-// Gunakan rute autentikasi
-app.use(authRoutes);
+// ➜ WebSocket Server dengan Bun
+const server = serve({
+    port: 3000,
+
+    websocket: {
+        open(ws) {
+            console.log("✅ Client connected!");
+            clients.add(ws);
+        },
+        message(ws, message) {
+            console.log("📩 Received:", message);
+            try {
+                const data = JSON.parse(message);
+                const username = ws.data?.user || "Anonymous";
+                const formattedMessage = `${username}: ${data.message}`;
+
+                for (const client of clients) {
+                    if (client.readyState === WebSocket.OPEN) {
+                        client.send(formattedMessage);
+                    }
+                }
+            } catch (error) {
+                console.error("❌ Error parsing message:", error);
+            }
+        },
+        close(ws) {
+            console.log("🔌 Client disconnected!");
+            clients.delete(ws);
+        },
+    },
+
+    fetch(req, server) {
+        const url = new URL(req.url);
+
+        // 🔄 Upgrade WebSocket pada endpoint `/ws`
+        if (url.pathname === "/ws") {
+            console.log("🔌 Incoming WebSocket connection...");
+            const success = server.upgrade(req, { data: { user: req.headers.get("cookie")?.split("=")[1] || "Guest" } });
+            return success ? undefined : new Response("WebSocket Upgrade Failed", { status: 400 });
+        }
+
+        // Jika bukan WebSocket, lanjutkan ke Elysia
+        return app.handle(req);
+    },
+});
+
+// 🔥 Perbaikan: Jalankan Elysia dengan `app.listen()`
+app.listen(3000);
 
 console.log("✅ Server is running on http://localhost:3000");
