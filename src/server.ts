@@ -6,6 +6,44 @@ import { serve } from "bun";
 const app = new Elysia();
 const clients = new Set<WebSocket>();
 
+// ➜ Server HTTP & WebSocket dalam satu `serve({})`
+const server = serve({
+    port: 3000,
+
+    // 🔌 Konfigurasi WebSocket dengan `websocket` object
+    websocket: {
+        open(ws) {
+            console.log("✅ Client connected!");
+            clients.add(ws);
+        },
+        message(ws, message) {
+            console.log("📩 Received message:", message);
+            for (const client of clients) {
+                if (client.readyState === WebSocket.OPEN) {
+                    client.send(message);
+                }
+            }
+        },
+        close(ws) {
+            console.log("🔌 Client disconnected!");
+            clients.delete(ws);
+        },
+    },
+
+    fetch(req, server) {
+        const url = new URL(req.url);
+
+        // 🔄 Upgrade WebSocket pada endpoint `/ws`
+        if (url.pathname === "/ws") {
+            console.log("🔌 Incoming WebSocket connection...");
+            const success = server.upgrade(req);
+            return success ? undefined : new Response("WebSocket Upgrade Failed", { status: 400 });
+        }
+
+        return app.handle(req);
+    },
+});
+
 // ➜ Middleware untuk membaca cookie session
 app.use(async ({ request, next }) => {
     const cookies = request.headers.get("cookie");
@@ -57,43 +95,7 @@ app.get("/logout", async () => {
     });
 });
 
-// ➜ WebSocket Server untuk Chat
-const server = serve({
-    port: 3000,
-    fetch(req, server) {
-        const url = new URL(req.url);
-
-        // **WebSocket Endpoint**
-        if (url.pathname === "/ws") {
-            const success = server.upgrade(req, {
-                data: {},
-                onOpen(ws) {
-                    console.log("✅ Client connected!");
-                    clients.add(ws);
-                },
-                onMessage(ws, message) {
-                    console.log("📩 Received:", message);
-
-                    for (const client of clients) {
-                        if (client.readyState === WebSocket.OPEN) {
-                            client.send(message);
-                        }
-                    }
-                },
-                onClose(ws) {
-                    console.log("🔌 Client disconnected!");
-                    clients.delete(ws);
-                },
-            });
-
-            return success ? undefined : new Response("WebSocket Upgrade Failed", { status: 400 });
-        }
-
-        return app.handle(req);
-    },
-});
-
-// ➜ Gunakan rute autentikasi
+// Gunakan rute autentikasi
 app.use(authRoutes);
 
 console.log("✅ Server is running on http://localhost:3000");

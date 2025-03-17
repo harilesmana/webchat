@@ -10,41 +10,41 @@
     <a href="/logout">Logout</a>
     <hr>
     <h2>Chat Room</h2>
-    
+
     <div id="chat-box" style="border: 1px solid #000; width: 300px; height: 300px; overflow-y: auto;"></div>
     <input type="text" id="chat-input" placeholder="Type a message...">
     <button onclick="sendMessage()">Send</button>
 
     <script>
-        const ws = new WebSocket("ws://localhost:3000/ws");
+        const wsUrl = window.location.origin.replace("http", "ws") + "/ws";
+        const ws = new WebSocket(wsUrl);
 
         ws.onopen = () => {
-            console.log("✅ Connected to WebSocket");
-            ws.send("✅ " + "<%= username %>" + " joined the chat");
-        };
-
-        ws.onmessage = (event) => {
-            console.log("📨 Received:", event.data);
-            const chatBox = document.getElementById("chat-box");
-            const msg = document.createElement("p");
-            msg.textContent = event.data;
-            chatBox.appendChild(msg);
-            chatBox.scrollTop = chatBox.scrollHeight;
+            console.log("✅ WebSocket Connected to:", wsUrl);
+            alert("Connected to WebSocket!");
         };
 
         ws.onerror = (error) => {
             console.error("❌ WebSocket Error:", error);
+            alert("WebSocket Error! Check console.");
         };
 
-        ws.onclose = () => {
-            console.log("🔌 WebSocket Disconnected");
+        ws.onmessage = (event) => {
+            console.log("📩 Message received:", event.data);
+            alert("Message received: " + event.data);
+
+            const chatBox = document.getElementById("chat-box");
+            const msg = document.createElement("p");
+            msg.textContent = event.data;
+            chatBox.appendChild(msg);
         };
 
         function sendMessage() {
             const input = document.getElementById("chat-input");
             if (input.value.trim() !== "") {
-                console.log("📤 Sending:", input.value);
-                ws.send("<%= username %>: " + input.value);
+                console.log("📤 Sending message:", input.value);
+                ws.send(input.value);
+                alert("Message Sent: " + input.value);
                 input.value = "";
             }
         }
