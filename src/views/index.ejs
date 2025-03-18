@@ -4,9 +4,47 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Welcome</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f4f4f4;
+            text-align: center;
+            margin: 0;
+            padding: 0;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 20px;
+        }
+
+        a {
+            text-decoration: none;
+            color: #fff;
+            background: #4CAF50;
+            padding: 10px 15px;
+            border-radius: 5px;
+            margin: 5px;
+            display: inline-block;
+        }
+
+        a:nth-child(2) {
+            background: #007BFF;
+        }
+
+        a:hover {
+            opacity: 0.8;
+        }
+    </style>
 </head>
 <body>
     <h1>Welcome to the Chat Platform</h1>
-    <a href="/login">Login</a> | <a href="/register">Register</a>
+    <a href="/login">Login</a>
+    <a href="/register">Register</a>
 </body>
 </html>

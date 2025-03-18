@@ -1,6 +1,5 @@
 const wsUrl = window.location.origin.replace("http", "ws") + "/ws";
 const ws = new WebSocket(wsUrl);
-const username = "<%= username %>";
 
 ws.onopen = () => console.log("✅ Connected to WebSocket!");
 ws.onerror = (error) => console.error("❌ WebSocket Error:", error);
